@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b3d2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Flora">
+  <meta name="description" content="Inventario geoespacial de flora para viveros municipales y arbolado urbano">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="icon" href="./icon-192.png">
+  <title>Inventario Flora · Vivero Municipal</title>
+  <style>
+    :root{
+      --green-900:#082e23;--green-800:#0b3d2e;--green-700:#10563f;--accent:#f5b301;
+      --ink:#101a16;--ink-soft:#3c4b44;--paper:#fff;--surface:#f4f7f5;--surface-2:#e8efeb;
+      --line:#b9c8c0;--danger:#a4161a;--danger-soft:#ffe9e9;--ok:#0f6b3c;--focus:#0047ff;
+      --radius:12px;--shadow:0 2px 10px rgba(8,46,35,.12);--font:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    }
+    body[data-field-mode='true']{
+      --ink:#000;--ink-soft:#000;--paper:#fff;--surface:#fff;--surface-2:#fff;--line:#000;
+      --accent:#ffd400;--focus:#000;--shadow:none;font-size:112%;
+    }
+    body[data-field-mode='true'] input,
+    body[data-field-mode='true'] select,
+    body[data-field-mode='true'] textarea,
+    body[data-field-mode='true'] .rich-editor__area{border-width:3px;font-weight:600}
+    *{box-sizing:border-box}
+    html,body{min-height:100%}
+    body{margin:0;font-family:var(--font);font-size:16px;line-height:1.5;color:var(--ink);background:var(--surface);-webkit-font-smoothing:antialiased}
+    h1,h2,h3,p,dl,dd{margin:0}
+    button,input,select,textarea{font:inherit;color:inherit}
+    input,select,textarea{width:100%;min-height:48px;padding:10px 12px;border:2px solid var(--line);border-radius:8px;background:var(--paper)}
+    textarea{min-height:110px;resize:vertical}
+    input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,.rich-editor__area:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+    input.invalid,select.invalid,textarea.invalid{border-color:var(--danger);background:var(--danger-soft)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:9px 16px;border:2px solid transparent;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;text-decoration:none}
+    .btn:disabled{opacity:.45;cursor:not-allowed}
+    .btn--primary{background:var(--green-700);color:#fff}
+    .btn--secondary{background:var(--surface-2);border-color:var(--green-700);color:var(--green-800)}
+    .btn--ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+    .btn--danger{background:var(--danger);color:#fff}
+    .btn--danger-ghost{background:transparent;border-color:var(--danger);color:var(--danger)}
+    .btn--small{min-height:38px;padding:6px 11px;font-size:.86rem}
+    .btn--large{min-height:54px;font-size:1.05rem}
+    .btn--block{width:100%}
+    .app-header{position:sticky;top:0;z-index:20;padding:12px clamp(12px,3vw,32px) 0;background:var(--green-800);color:#fff;box-shadow:var(--shadow)}
+    body[data-field-mode='true'] .app-header{background:#000;border-bottom:4px solid var(--accent)}
+    .app-header__top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;max-width:1180px;margin:0 auto}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand__mark{font-size:2rem}
+    .brand__title{display:block;font-size:1.3rem}
+    .brand__subtitle{display:block;font-size:.8rem;opacity:.85}
+    .app-header__actions{display:flex;flex-wrap:wrap;gap:8px}
+    .app-header__actions .btn{min-height:48px}
+    .app-header__actions .btn--primary{background:var(--accent);border-color:var(--accent);color:#1b1b00}
+    .app-header__stats{display:flex;flex-wrap:wrap;gap:10px;max-width:1180px;margin:10px auto 0;padding:8px 0;border-top:1px solid rgba(255,255,255,.2);font-size:.86rem}
+    .app-header__badge{margin-left:auto;padding:3px 9px;border:1px solid rgba(255,255,255,.45);border-radius:999px;font-size:.76rem}
+    .app-main{max-width:1180px;margin:0 auto;padding:clamp(14px,2.5vw,26px)}
+    .filter-bar{padding:16px;border:2px solid var(--line);border-radius:var(--radius);background:var(--paper);box-shadow:var(--shadow)}
+    .filter-bar__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .filter-bar__footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:.88rem;color:var(--ink-soft)}
+    .field{display:grid;gap:6px;min-width:0}
+    .field__label{font-weight:700;font-size:.92rem}
+    .field__required{color:var(--danger)}
+    .field__hint{font-size:.8rem;color:var(--ink-soft)}
+    .field__error{font-size:.85rem;font-weight:700;color:var(--danger);min-height:1em}
+    .specimen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px;margin-top:18px}
+    .specimen-card{display:grid;grid-template-columns:130px 1fr;overflow:hidden;border:2px solid var(--line);border-radius:var(--radius);background:var(--paper);box-shadow:var(--shadow)}
+    .specimen-card__photo{display:grid;place-items:center;min-height:190px;background:var(--surface-2);font-size:2rem}
+    .specimen-card__photo img{width:100%;height:100%;object-fit:cover}
+    .specimen-card__body{display:grid;align-content:start;gap:8px;padding:14px;min-width:0}
+    .specimen-card__badges{display:flex;flex-wrap:wrap;gap:6px}
+    .badge{padding:3px 9px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:.75rem;font-weight:700}
+    .status--excelente,.status--bueno{background:#d8f3df;border-color:var(--ok);color:#064a29}
+    .status--regular{background:#fff3cd;border-color:#a87b00;color:#6b4e00}
+    .status--malo,.status--enfermo-plaga{background:#ffe0d6;border-color:#b64113;color:#7a2a09}
+    .status--muerto{background:#e2e2e2;border-color:#4a4a4a;color:#222}
+    .specimen-card__name{font-size:1.2rem;line-height:1.2}
+    .specimen-card__scientific{font-style:italic;color:var(--ink-soft)}
+    .specimen-card__meta{display:grid;gap:4px;font-size:.82rem}
+    .specimen-card__meta>div{display:grid;grid-template-columns:90px 1fr;gap:6px}
+    .specimen-card__meta dt{font-weight:700;color:var(--ink-soft)}
+    .specimen-card__meta dd{overflow-wrap:anywhere}
+    .specimen-card__actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+    .empty-state{display:grid;justify-items:center;gap:10px;margin-top:24px;padding:54px 20px;border:2px dashed var(--line);border-radius:var(--radius);background:var(--paper);text-align:center}
+    .empty-state>span{font-size:3rem}
+    .empty-state h2{font-size:1.3rem}
+    .empty-state p{color:var(--ink-soft)}
+    .form-card{display:grid;gap:18px;max-width:980px;margin:0 auto;padding:clamp(16px,3vw,30px);border:2px solid var(--line);border-radius:var(--radius);background:var(--paper);box-shadow:var(--shadow)}
+    .form-card__header{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;padding-bottom:14px;border-bottom:3px solid var(--green-700)}
+    .form-card__title{font-size:clamp(1.4rem,3vw,2rem)}
+    .form-card__subtitle{color:var(--ink-soft);font-size:.9rem}
+    .form-card__id{align-self:center;padding:6px 10px;border-radius:6px;background:var(--surface-2);font-size:.75rem;overflow-wrap:anywhere;max-width:100%}
+    .form-section{display:grid;gap:14px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+    .form-section__title{font-size:1.05rem;color:var(--green-800)}
+    .form-grid{display:grid;gap:14px;grid-template-columns:1fr}
+    .form-grid--2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .form-grid--3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .form-actions{display:flex;justify-content:flex-end;gap:10px}
+    .scientific-name{font-style:italic}
+    .input-with-unit{position:relative}
+    .input-with-unit input{padding-right:44px}
+    .input-with-unit span{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-weight:700;color:var(--ink-soft)}
+    .gps-field{display:grid;gap:10px;padding:14px;border:2px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+    .gps-field__header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+    .gps-field__inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .gps-field__message{padding:8px 10px;border-radius:6px;font-size:.88rem;font-weight:600}
+    .gps-field__message--ok{background:#d8f3df;color:#064a29}
+    .gps-field__message--error{background:var(--danger-soft);color:var(--danger)}
+    .image-picker{display:grid;grid-template-columns:170px 1fr;gap:14px;padding:12px;border:2px dashed var(--line);border-radius:var(--radius);background:var(--surface)}
+    .image-picker.invalid{border-color:var(--danger);background:var(--danger-soft)}
+    .image-picker__preview{display:grid;place-items:center;min-height:150px;border-radius:8px;overflow:hidden;background:var(--surface-2)}
+    .image-picker__preview img{width:100%;height:100%;max-height:200px;object-fit:cover}
+    .image-picker__placeholder{display:grid;justify-items:center;font-size:2.4rem;color:var(--ink-soft)}
+    .image-picker__placeholder small{font-size:.8rem}
+    .image-picker__controls{display:flex;flex-wrap:wrap;align-content:start;gap:8px}
+    .image-picker__filename{width:100%;font-size:.8rem;color:var(--ink-soft);overflow-wrap:anywhere}
+    .rich-editor{border:2px solid var(--line);border-radius:8px;overflow:hidden;background:var(--paper)}
+    .rich-editor.invalid{border-color:var(--danger)}
+    .rich-editor__toolbar{display:flex;gap:4px;padding:6px;border-bottom:2px solid var(--line);background:var(--surface-2)}
+    .rich-editor__toolbar button{min-width:40px;min-height:36px;padding:4px 8px;border:2px solid var(--line);border-radius:6px;background:var(--paper);cursor:pointer;font-weight:700}
+    .rich-editor__area{min-height:130px;padding:12px;outline-offset:-3px}
+    .rich-editor__area:empty:before{content:'Descripción morfológica: porte, hojas, flores, corteza…';color:var(--ink-soft)}
+    .rich-editor__area ul{padding-left:22px}
+    .modal-backdrop{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:rgba(4,20,14,.65)}
+    .modal{display:grid;width:min(760px,100%);max-height:min(90vh,900px);overflow:hidden;border:3px solid var(--green-800);border-radius:var(--radius);background:var(--paper);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+    .modal--small{width:min(480px,100%)}
+    .modal__header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:16px 18px;border-bottom:2px solid var(--line)}
+    .modal__title{font-size:1.4rem}
+    .modal__text{padding:18px}
+    .modal__body{display:grid;gap:14px;padding:18px;overflow-y:auto}
+    .modal__actions{display:flex;justify-content:flex-end;gap:10px;padding:14px 18px;border-top:2px solid var(--line)}
+    .detail-photo{width:100%;max-height:320px;object-fit:cover;border-radius:8px}
+    .detail-badges{display:flex;gap:8px}
+    .detail-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px}
+    .detail-list>div{display:grid;gap:1px;padding:8px 0;border-bottom:1px solid var(--line)}
+    .detail-list dt{font-size:.76rem;font-weight:700;color:var(--ink-soft)}
+    .detail-list dd{font-size:.94rem;overflow-wrap:anywhere}
+    .detail-block h3{margin-bottom:4px;font-size:1rem;color:var(--green-800)}
+    .detail-block p,.detail-block div{white-space:pre-wrap}
+    .toast{position:fixed;right:18px;bottom:18px;z-index:80;display:flex;align-items:center;gap:14px;max-width:min(420px,calc(100vw - 36px));padding:12px 14px;border:3px solid var(--green-800);border-radius:10px;background:var(--paper);color:var(--ink);font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .toast button{border:0;background:transparent;cursor:pointer;font-weight:700}
+    @media (max-width:960px){.filter-bar__grid,.form-grid--3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width:680px){
+      .app-header__actions{width:100%}
+      .app-header__actions .btn{flex:1 1 auto}
+      .app-header__badge{margin-left:0}
+      .filter-bar__grid,.form-grid--2,.form-grid--3,.gps-field__inputs,.detail-list{grid-template-columns:1fr}
+      .specimen-grid{grid-template-columns:1fr}
+      .specimen-card{grid-template-columns:110px 1fr}
+      .image-picker{grid-template-columns:1fr}
+      .form-actions{flex-direction:column-reverse}
+      .form-actions .btn{width:100%}
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header id="header" class="app-header"></header>
+    <main id="main" class="app-main"></main>
+    <div id="overlays"></div>
+    <div id="toast-root"></div>
+  </div>
+  <script>
+  'use strict';
+
+  /* ============================ Catálogos ============================ */
+  const VEGETATION_TYPES = ['Bosque templado','Selva','Matorral','Urbana','Pastizal','Humedal','Manglar','Desierto','Otro'];
+  const ORIGINS = ['Nativa','Endémica','Exótica','Introducida'];
+  const HEALTH = ['Excelente','Bueno','Regular','Malo','Enfermo/Plaga','Muerto'];
+  const LABELS = {
+    commonName:'Nombre común', scientificName:'Nombre científico', family:'Familia',
+    vegetationType:'Tipo de vegetación', origin:'Origen', photo:'Fotografía',
+    location:'Ubicación', latitude:'Latitud', longitude:'Longitud', heightMeters:'Altura aproximada',
+    healthStatus:'Estado físico', description:'Descripción morfológica', observations:'Observaciones',
+    registeredAt:'Fecha y hora de registro'
+  };
+
+  const state = {
+    view:'list', editingId:null, detailId:null,
+    specimens:[], photo:null, fieldMode:false, pendingDelete:null,
+    filters:{family:'',vegetationType:'',healthStatus:'',query:''},
+    gps:{state:'idle',message:''}
+  };
+
+  /* ============================ Utilidades ============================ */
+  const $ = (id) => document.getElementById(id);
+  function esc(value){return String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function normalize(value){return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+  function uuid(){
+    if (window.crypto && typeof crypto.randomUUID==='function') return crypto.randomUUID();
+    return 'sp-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);
+  }
+  function pad(n){return String(n).padStart(2,'0');}
+  function toLocalInput(iso){
+    const d=new Date(iso); const x=isNaN(d.getTime())?new Date():d;
+    return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}T${pad(x.getHours())}:${pad(x.getMinutes())}`;
+  }
+  function formatDateTime(iso){
+    const d=new Date(iso); if(isNaN(d.getTime()))return '—';
+    return new Intl.DateTimeFormat('es-MX',{dateStyle:'medium',timeStyle:'short'}).format(d);
+  }
+  function fileStamp(){const d=new Date();return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;}
+  function statusClass(status){
+    return 'status--'+String(status).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  }
+  const ALLOWED_TAGS = new Set(['B','STRONG','I','EM','U','P','BR','DIV','SPAN','UL','OL','LI','BLOCKQUOTE','H3','H4']);
+  function sanitizeHtml(html){
+    if(!html)return '';
+    const doc=new DOMParser().parseFromString(html,'text/html');
+    doc.querySelectorAll('script,style,iframe,object,embed,link,meta,form,input').forEach(n=>n.remove());
+    const clean=(parent)=>{
+      for(const child of Array.from(parent.children)){
+        if(!ALLOWED_TAGS.has(child.tagName)){child.replaceWith(...Array.from(child.childNodes));continue;}
+        for(const attr of Array.from(child.attributes))child.removeAttribute(attr.name);
+        clean(child);
+      }
+    };
+    clean(doc.body);
+    return doc.body.innerHTML.trim();
+  }
+  function htmlToText(html){
+    const doc=new DOMParser().parseFromString(html||'','text/html');
+    return (doc.body.textContent||'').replace(/\s+/g,' ').trim();
+  }
+
+  /* ============================ IndexedDB ============================ */
+  const DB_NAME='flora_pwa_v1', STORE='specimens';
+  let db=null;
+  function openDB(){
+    return new Promise((resolve,reject)=>{
+      const req=indexedDB.open(DB_NAME,1);
+      req.onupgradeneeded=()=>{
+        const d=req.result;
+        if(!d.objectStoreNames.contains(STORE)){
+          const s=d.createObjectStore(STORE,{keyPath:'id'});
+          ['family','vegetationType','healthStatus','registeredAt'].forEach(k=>s.createIndex(k,k));
+        }
+      };
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>reject(req.error);
+    });
+  }
+  function idb(mode,operation){
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(STORE,mode);
+      const store=tx.objectStore(STORE);
+      const req=operation(store);
+      let result=null;
+      if(req && 'onsuccess' in req) req.onsuccess=()=>{result=req.result;};
+      tx.oncomplete=()=>resolve(result);
+      tx.onerror=()=>reject(tx.error);
+      tx.onabort=()=>reject(tx.error || new Error('Transacción abortada'));
+    });
+  }
+  const dbGetAll=()=>idb('readonly',s=>s.getAll());
+  const dbPut=(record)=>idb('readwrite',s=>s.put(record));
+  const dbDelete=(id)=>idb('readwrite',s=>s.delete(id));
+  async function loadSpecimens(){
+    const all=await dbGetAll();
+    state.specimens=all.sort((a,b)=>String(b.registeredAt).localeCompare(String(a.registeredAt)));
+  }
+
+  /* ============================ Render ============================ */
+  function renderHeader(){
+    $('header').innerHTML=`
+      <div class="app-header__top">
+        <div class="brand"><span class="brand__mark" aria-hidden="true">🌿</span><div>
+          <strong class="brand__title">Inventario Flora</strong>
+          <span class="brand__subtitle">Vivero Municipal · Arbolado urbano</span>
+        </div></div>
+        <div class="app-header__actions">
+          <button class="btn btn--ghost" data-action="toggle-field" aria-pressed="${state.fieldMode}">☀️ Modo campo</button>
+          ${state.view!=='list'?'<button class="btn btn--ghost" data-action="back">← Volver</button>':''}
+          <button class="btn btn--primary" data-action="new">+ Nuevo espécimen</button>
+          <button class="btn btn--ghost" data-action="export-json">⇩ JSON</button>
+          <button class="btn btn--ghost" data-action="export-csv">⇩ CSV</button>
+        </div>
+      </div>
+      <div class="app-header__stats" role="status">
+        <span><strong>${state.specimens.length}</strong> registros en el inventario</span><span aria-hidden="true">·</span>
+        <span><strong>${filtered().length}</strong> visibles con los filtros</span>
+        <span class="app-header__badge">Guardado local · funciona sin internet</span>
+      </div>`;
+  }
+
+  function renderMain(){
+    if(state.view==='form'){renderForm();return;}
+    const f=state.filters;
+    const options=(key,all,label)=>`<option value="">${label}</option>`+all.map(v=>`<option value="${esc(v)}" ${f[key]===v?'selected':''}>${esc(v)}</option>`).join('');
+    const families=[...new Set(state.specimens.map(s=>s.family))].sort((a,b)=>a.localeCompare(b,'es'));
+    const types=[...new Set(state.specimens.map(s=>s.vegetationType))].sort((a,b)=>a.localeCompare(b,'es'));
+    const statuses=[...new Set(state.specimens.map(s=>s.healthStatus))].sort((a,b)=>a.localeCompare(b,'es'));
+    $('main').innerHTML=`
+      <section class="filter-bar" aria-label="Filtros rápidos">
+        <div class="filter-bar__grid">
+          <label class="field"><span class="field__label">Buscar</span><input type="search" id="filter-query" data-filter="query" value="${esc(f.query)}" placeholder="Nombre, familia, zona…"></label>
+          <label class="field"><span class="field__label">Familia</span><select id="filter-family" data-filter="family">${options('family',families,'Todas las familias')}</select></label>
+          <label class="field"><span class="field__label">Tipo de vegetación</span><select id="filter-vegetationType" data-filter="vegetationType">${options('vegetationType',types,'Todos los tipos')}</select></label>
+          <label class="field"><span class="field__label">Estado físico</span><select id="filter-healthStatus" data-filter="healthStatus">${options('healthStatus',statuses,'Todos los estados')}</select></label>
+        </div>
+        <div class="filter-bar__footer">
+          <span id="filter-count"></span>
+          <button class="btn btn--ghost btn--small" data-action="clear-filters">Limpiar filtros</button>
+        </div>
+      </section>
+      <div id="list-area"></div>`;
+    renderList();
+    document.querySelectorAll('[data-filter]').forEach(el=>{
+      el.addEventListener(el.tagName==='INPUT'?'input':'change',(e)=>{
+        state.filters[e.target.dataset.filter]=e.target.value;
+        renderList(); renderHeader();
+      });
+    });
+  }
+
+  function filtered(){
+    const f=state.filters,q=normalize(f.query.trim());
+    return state.specimens.filter(s=>{
+      if(f.family && s.family!==f.family)return false;
+      if(f.vegetationType && s.vegetationType!==f.vegetationType)return false;
+      if(f.healthStatus && s.healthStatus!==f.healthStatus)return false;
+      if(!q)return true;
+      return normalize([s.commonName,s.scientificName,s.family,s.location,s.observations].join(' ')).includes(q);
+    });
+  }
+
+  function renderList(){
+    const area=$('list-area'); if(!area)return;
+    const items=filtered();
+    $('filter-count').textContent=`${items.length} de ${state.specimens.length} registros`;
+    if(items.length===0){
+      area.innerHTML=`<div class="empty-state"><span aria-hidden="true">🌱</span>
+        <h2>No hay registros que mostrar</h2>
+        <p>Ajusta los filtros o registra el primer espécimen del inventario.</p>
+        <button class="btn btn--primary" data-action="new">+ Registrar espécimen</button></div>`;
+      return;
+    }
+    area.innerHTML=`<div class="specimen-grid">${items.map(s=>`
+      <article class="specimen-card">
+        <div class="specimen-card__photo">${s.photo&&s.photo.dataUrl?`<img src="${s.photo.dataUrl}" alt="Fotografía de ${esc(s.commonName)}">`:'<span aria-hidden="true">📷</span>'}</div>
+        <div class="specimen-card__body">
+          <div class="specimen-card__badges"><span class="badge">${esc(s.family)}</span><span class="badge ${statusClass(s.healthStatus)}">${esc(s.healthStatus)}</span></div>
+          <h3 class="specimen-card__name">${esc(s.commonName)}</h3>
+          <p class="specimen-card__scientific">${esc(s.scientificName)}</p>
+          <dl class="specimen-card__meta">
+            <div><dt>Ubicación</dt><dd>${esc(s.location)}</dd></div>
+            <div><dt>Coordenadas</dt><dd>${Number(s.latitude).toFixed(5)}, ${Number(s.longitude).toFixed(5)}</dd></div>
+            <div><dt>Altura</dt><dd>${esc(s.heightMeters)} m</dd></div>
+            <div><dt>Registro</dt><dd>${esc(formatDateTime(s.registeredAt))}</dd></div>
+          </dl>
+          <div class="specimen-card__actions">
+            <button class="btn btn--ghost btn--small" data-action="view" data-id="${s.id}">Ver detalle</button>
+            <button class="btn btn--secondary btn--small" data-action="edit" data-id="${s.id}">Editar</button>
+            <button class="btn btn--danger-ghost btn--small" data-action="delete" data-id="${s.id}">Eliminar</button>
+          </div>
+        </div>
+      </article>`).join('')}</div>`;
+  }
+
+  /* ============================ Formulario ============================ */
+  function field(key,label,control){
+    return `<div class="field"><label class="field__label" for="${key}">${label} <span class="field__required">*</span></label>${control}<span class="field__error" id="err-${key}"></span></div>`;
+  }
+  function selectControl(id,values,placeholder){
+    return `<select id="${id}"><option value="">${placeholder}</option>${values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('')}</select>`;
+  }
+  function renderForm(){
+    const s=state.editingId?state.specimens.find(x=>x.id===state.editingId):null;
+    if(state.editingId&&!s){
+      $('main').innerHTML=`<div class="empty-state"><h2>El registro ya no existe</h2><button class="btn btn--primary" data-action="back">Volver al listado</button></div>`;
+      return;
+    }
+    state.photo=s&&s.photo?{...s.photo}:null;
+    state.gps={state:'idle',message:''};
+    $('main').innerHTML=`
+      <form id="specimen-form" class="form-card" novalidate>
+        <div class="form-card__header"><div>
+          <h1 class="form-card__title">${s?'Editar espécimen':'Nuevo espécimen'}</h1>
+          <p class="form-card__subtitle">Todos los campos son obligatorios para garantizar un inventario completo.</p>
+        </div><code class="form-card__id">${s?esc(s.id):'ID se genera al guardar'}</code></div>
+
+        <section class="form-section"><h2 class="form-section__title">1 · Identificación botánica</h2>
+          <div class="form-grid form-grid--3">
+            ${field('commonName',LABELS.commonName,`<input id="commonName" value="${esc(s?.commonName||'')}" placeholder="Ej. Encino">`)}
+            ${field('scientificName',LABELS.scientificName,`<input id="scientificName" class="scientific-name" value="${esc(s?.scientificName||'')}" placeholder="Quercus robur">`)}
+            ${field('family',LABELS.family,`<input id="family" list="family-suggestions" value="${esc(s?.family||'')}" placeholder="Fagaceae"><datalist id="family-suggestions"><option value="Fabaceae"></option><option value="Fagaceae"></option><option value="Asteraceae"></option><option value="Poaceae"></option><option value="Rosaceae"></option><option value="Myrtaceae"></option></datalist>`)}
+          </div>
+        </section>
+
+        <section class="form-section"><h2 class="form-section__title">2 · Clasificación y estado</h2>
+          <div class="form-grid form-grid--3">
+            ${field('vegetationType',LABELS.vegetationType,selectControl('vegetationType',VEGETATION_TYPES,'Selecciona…'))}
+            ${field('origin',LABELS.origin,selectControl('origin',ORIGINS,'Selecciona…'))}
+            ${field('healthStatus',LABELS.healthStatus,selectControl('healthStatus',HEALTH,'Selecciona…'))}
+          </div>
+        </section>
+
+        <section class="form-section"><h2 class="form-section__title">3 · Fotografía y localización</h2>
+          <div class="field"><span class="field__label">${LABELS.photo} <span class="field__required">*</span></span>
+            <div class="image-picker" id="photo-box">
+              <div class="image-picker__preview" id="photo-preview"></div>
+              <div class="image-picker__controls">
+                <button type="button" class="btn btn--secondary" data-action="pick-camera">📸 Tomar foto</button>
+                <button type="button" class="btn btn--secondary" data-action="pick-gallery">🖼️ Elegir archivo</button>
+                <button type="button" class="btn btn--ghost" data-action="remove-photo">Quitar</button>
+                <input type="file" id="photo-camera" accept="image/*" capture="environment" hidden>
+                <input type="file" id="photo-gallery" accept="image/*" hidden>
+                <p class="image-picker__filename" id="photo-filename"></p>
+              </div>
+            </div>
+            <span class="field__error" id="err-photo"></span>
+          </div>
+          <div class="form-grid">${field('location',LABELS.location,`<input id="location" value="${esc(s?.location||'')}" placeholder="Sección norte, Vivero Municipal">`)}</div>
+          <div class="gps-field">
+            <div class="gps-field__header"><span class="field__label">Coordenadas GPS</span>
+              <button type="button" class="btn btn--secondary btn--small" data-action="locate">◎ Usar mi ubicación actual</button></div>
+            <div class="gps-field__inputs">
+              ${field('latitude','Latitud',`<input id="latitude" type="number" step="any" min="-90" max="90" inputmode="decimal" value="${esc(s?.latitude??'')}" placeholder="19.432608">`)}
+              ${field('longitude','Longitud',`<input id="longitude" type="number" step="any" min="-180" max="180" inputmode="decimal" value="${esc(s?.longitude??'')}" placeholder="-99.133209">`)}
+            </div>
+            <p class="gps-field__message" id="gps-message"></p>
+            <p class="field__hint">También puedes capturar las coordenadas manualmente si no hay señal.</p>
+          </div>
+        </section>
+
+        <section class="form-section"><h2 class="form-section__title">4 · Medición y fecha</h2>
+          <div class="form-grid form-grid--2">
+            ${field('heightMeters',LABELS.heightMeters,`<div class="input-with-unit"><input id="heightMeters" type="number" step="0.01" min="0" inputmode="decimal" value="${esc(s?.heightMeters??'')}" placeholder="12.5"><span>m</span></div>`)}
+            ${field('registeredAt',LABELS.registeredAt,`<input id="registeredAt" type="datetime-local" value="${esc(toLocalInput(s?.registeredAt||new Date().toISOString()))}">`)}
+          </div>
+        </section>
+
+        <section class="form-section"><h2 class="form-section__title">5 · Observaciones de campo</h2>
+          <div class="field"><span class="field__label">${LABELS.description} <span class="field__required">*</span></span>
+            <div class="rich-editor" id="description-box">
+              <div class="rich-editor__toolbar" role="toolbar">
+                <button type="button" data-action="format" data-cmd="bold" title="Negrita"><strong>B</strong></button>
+                <button type="button" data-action="format" data-cmd="italic" title="Cursiva"><em>I</em></button>
+                <button type="button" data-action="format" data-cmd="underline" title="Subrayado"><u>U</u></button>
+                <button type="button" data-action="format" data-cmd="insertUnorderedList" title="Lista">• Lista</button>
+              </div>
+              <div id="description" class="rich-editor__area" contenteditable="true" role="textbox" aria-multiline="true">${sanitizeHtml(s?.description||'')}</div>
+            </div>
+            <span class="field__error" id="err-description"></span>
+          </div>
+          ${field('observations',LABELS.observations,`<textarea id="observations" rows="4" placeholder="Riego, plagas, mantenimiento, persona que registró…">${esc(s?.observations||'')}</textarea>`)}
+        </section>
+
+        <footer class="form-actions">
+          <button type="button" class="btn btn--ghost" data-action="back">Cancelar</button>
+          <button type="submit" class="btn btn--primary btn--large">${s?'Guardar cambios':'Registrar espécimen'}</button>
+        </footer>
+      </form>`;
+    if(s){['vegetationType','origin','healthStatus'].forEach(k=>{$(k).value=s[k];});}
+    renderPhotoPreview();
+    $('specimen-form').addEventListener('submit',handleSubmit);
+    $('photo-camera').addEventListener('change',handlePhotoFile);
+    $('photo-gallery').addEventListener('change',handlePhotoFile);
+  }
+
+  function renderPhotoPreview(){
+    const box=$('photo-preview'),name=$('photo-filename');
+    if(!box||!name)return;
+    if(state.photo&&state.photo.dataUrl){
+      box.innerHTML=`<img src="${state.photo.dataUrl}" alt="Vista previa del espécimen">`;
+      name.textContent=`${state.photo.name} · ${Math.round(state.photo.dataUrl.length*0.75/1024)} KB`;
+    }else{
+      box.innerHTML='<span class="image-picker__placeholder" aria-hidden="true">📷<small>Sin fotografía</small></span>';
+      name.textContent='';
+    }
+  }
+
+  function resizePhoto(file){
+    return new Promise((resolve,reject)=>{
+      const reader=new FileReader();
+      reader.onerror=()=>reject(new Error('No se pudo leer la imagen'));
+      reader.onload=()=>{
+        const img=new Image();
+        img.onerror=()=>reject(new Error('Imagen no válida'));
+        img.onload=()=>{
+          const max=1600;let w=img.width,h=img.height;
+          if(w>max||h>max){const r=Math.min(max/w,max/h);w=Math.round(w*r);h=Math.round(h*r);}
+          const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+          const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
+          resolve({dataUrl:canvas.toDataURL('image/jpeg',0.82),name:file.name||`flora-${Date.now()}.jpg`,mimeType:'image/jpeg'});
+        };
+        img.src=reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  async function handlePhotoFile(event){
+    const file=event.target.files&&event.target.files[0];
+    if(!file)return;
+    try{state.photo=await resizePhoto(file);renderPhotoPreview();clearError('photo');}
+    catch(err){toast(err.message||'No se pudo procesar la imagen');}
+    event.target.value='';
+  }
+
+  function readForm(){
+    const val=(id)=>$(id)?$(id).value:'';
+    return {
+      commonName:val('commonName'), scientificName:val('scientificName'), family:val('family'),
+      vegetationType:val('vegetationType'), origin:val('origin'), photo:state.photo,
+      location:val('location'), latitude:val('latitude'), longitude:val('longitude'),
+      heightMeters:val('heightMeters'), healthStatus:val('healthStatus'),
+      description:sanitizeHtml($('description')?$('description').innerHTML:''),
+      observations:val('observations'), registeredAt:val('registeredAt')
+    };
+  }
+  function validate(v){
+    const e={};
+    ['commonName','scientificName','family','location','observations'].forEach(k=>{if(!String(v[k]||'').trim())e[k]=LABELS[k]+' es obligatorio';});
+    if(!htmlToText(v.description))e.description='La descripción es obligatoria';
+    if(!v.vegetationType)e.vegetationType='Selecciona un tipo de vegetación';
+    if(!v.origin)e.origin='Selecciona un origen';
+    if(!v.healthStatus)e.healthStatus='Selecciona un estado físico';
+    if(!v.photo)e.photo='Asocia una fotografía';
+    const lat=Number(v.latitude);
+    if(!String(v.latitude).trim())e.latitude='La latitud es obligatoria';
+    else if(!Number.isFinite(lat)||lat<-90||lat>90)e.latitude='Debe estar entre -90 y 90';
+    const lon=Number(v.longitude);
+    if(!String(v.longitude).trim())e.longitude='La longitud es obligatoria';
+    else if(!Number.isFinite(lon)||lon<-180||lon>180)e.longitude='Debe estar entre -180 y 180';
+    const h=Number(v.heightMeters);
+    if(!String(v.heightMeters).trim())e.heightMeters='La altura es obligatoria';
+    else if(!Number.isFinite(h)||h<0)e.heightMeters='Ingresa un valor válido en metros';
+    if(!v.registeredAt)e.registeredAt='La fecha de registro es obligatoria';
+    else if(isNaN(new Date(v.registeredAt).getTime()))e.registeredAt='Fecha u hora no válida';
+    return e;
+  }
+  function clearError(key){
+    const span=$('err-'+key);if(span)span.textContent='';
+    const input=$(key);if(input)input.classList.remove('invalid');
+    if(key==='photo')$('photo-box')?.classList.remove('invalid');
+    if(key==='description')$('description-box')?.classList.remove('invalid');
+  }
+  function showErrors(errors){
+    Object.keys(LABELS).forEach(clearError);
+    Object.entries(errors).forEach(([key,message])=>{
+      const span=$('err-'+key);if(span)span.textContent=message;
+      const input=$(key);if(input)input.classList.add('invalid');
+      if(key==='photo')$('photo-box')?.classList.add('invalid');
+      if(key==='description')$('description-box')?.classList.add('invalid');
+    });
+  }
+  async function handleSubmit(event){
+    event.preventDefault();
+    const v=readForm();const errors=validate(v);showErrors(errors);
+    if(Object.keys(errors).length){toast('Revisa los campos marcados en rojo');return;}
+    const now=new Date().toISOString();const parsed=new Date(v.registeredAt);
+    const record={
+      id:state.editingId||uuid(),commonName:v.commonName.trim(),scientificName:v.scientificName.trim(),
+      family:v.family.trim(),vegetationType:v.vegetationType,origin:v.origin,photo:v.photo,
+      location:v.location.trim(),latitude:Number(v.latitude),longitude:Number(v.longitude),
+      heightMeters:Number(v.heightMeters),healthStatus:v.healthStatus,description:v.description,
+      observations:v.observations.trim(),registeredAt:isNaN(parsed.getTime())?now:parsed.toISOString(),
+      createdAt:(state.specimens.find(s=>s.id===state.editingId)||{}).createdAt||now,updatedAt:now
+    };
+    try{
+      await dbPut(record);
+      state.editingId=null;state.photo=null;
+      await loadSpecimens();state.view='list';
+      toast('Espécimen guardado correctamente');renderAll();
+    }catch(err){toast('No se pudo guardar: '+(err.message||'error local'));}
+  }
+
+  /* ============================ GPS ============================ */
+  function locate(){
+    if(!navigator.geolocation){setGps('error','Este navegador no admite geolocalización.');return;}
+    setGps('loading','Obteniendo ubicación…');
+    navigator.geolocation.getCurrentPosition(
+      (pos)=>{
+        $('latitude').value=String(Math.round(pos.coords.latitude*1e6)/1e6);
+        $('longitude').value=String(Math.round(pos.coords.longitude*1e6)/1e6);
+        clearError('latitude');clearError('longitude');
+        setGps('ok',`Ubicación obtenida${pos.coords.accuracy?` · precisión ±${Math.round(pos.coords.accuracy)} m`:''}`);
+      },
+      (err)=>{
+        const messages={1:'Permiso de ubicación denegado. Habilítalo en Safari → Ajustes del sitio.',2:'No se pudo obtener la posición. Revisa la señal GPS.',3:'Se agotó el tiempo de espera del GPS. Intenta de nuevo.'};
+        setGps('error',messages[err.code]||'No se pudo obtener la ubicación');
+      },
+      {enableHighAccuracy:true,timeout:15000,maximumAge:0}
+    );
+  }
+  function setGps(kind,message){
+    state.gps={state:kind,message};
+    const box=$('gps-message');if(!box)return;
+    box.textContent=message;
+    box.className='gps-field__message'+(kind!=='idle'?` gps-field__message--${kind}`:'');
+  }
+
+  /* ============================ Detalle y borrado ============================ */
+  function renderOverlays(){
+    const host=$('overlays');
+    if(state.detailId){
+      const s=state.specimens.find(x=>x.id===state.detailId);
+      if(s){
+        const rows=[['ID único',s.id],['Nombre común',s.commonName],['Nombre científico',s.scientificName],['Familia',s.family],
+          ['Tipo de vegetación',s.vegetationType],['Origen',s.origin],['Ubicación',s.location],['Latitud',s.latitude],
+          ['Longitud',s.longitude],['Altura aproximada',`${s.heightMeters} m`],['Estado físico',s.healthStatus],
+          ['Fotografía',s.photo?s.photo.name:'Sin archivo'],['Fecha de registro',formatDateTime(s.registeredAt)],
+          ['Última edición',formatDateTime(s.updatedAt)]];
+        const map=`https://www.openstreetmap.org/?mlat=${s.latitude}&mlon=${s.longitude}#map=18/${s.latitude}/${s.longitude}`;
+        host.innerHTML=`<div class="modal-backdrop" data-action="close-detail">
+          <div class="modal" role="dialog" aria-modal="true" aria-label="Detalle de ${esc(s.commonName)}">
+            <div class="modal__header"><div><h2 class="modal__title">${esc(s.commonName)}</h2><p class="specimen-card__scientific">${esc(s.scientificName)}</p></div>
+              <button class="btn btn--ghost btn--small" data-action="close-detail">✕</button></div>
+            <div class="modal__body">
+              ${s.photo&&s.photo.dataUrl?`<img class="detail-photo" src="${s.photo.dataUrl}" alt="Fotografía de ${esc(s.commonName)}">`:''}
+              <div class="detail-badges"><span class="badge">${esc(s.family)}</span><span class="badge ${statusClass(s.healthStatus)}">${esc(s.healthStatus)}</span></div>
+              <dl class="detail-list">${rows.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+              <section class="detail-block"><h3>Descripción morfológica</h3><div>${sanitizeHtml(s.description)}</div></section>
+              <section class="detail-block"><h3>Observaciones</h3><p>${esc(s.observations)}</p></section>
+              <a class="btn btn--secondary" href="${map}" target="_blank" rel="noreferrer">🗺️ Ver en el mapa</a>
+            </div>
+            <div class="modal__actions"><button class="btn btn--ghost" data-action="close-detail">Cerrar</button>
+              <button class="btn btn--primary" data-action="edit" data-id="${s.id}">Editar registro</button></div>
+          </div></div>`;
+        return;
+      }
+    }
+    if(state.pendingDelete){
+      const s=state.specimens.find(x=>x.id===state.pendingDelete);
+      if(s)host.innerHTML=`<div class="modal-backdrop" data-action="cancel-delete"><div class="modal modal--small" role="alertdialog" aria-modal="true">
+        <h2 class="modal__title" style="padding:18px 18px 0">Eliminar espécimen</h2>
+        <p class="modal__text">¿Eliminar definitivamente "${esc(s.commonName)}" (${esc(s.scientificName)})? Esta acción no se puede deshacer.</p>
+        <div class="modal__actions"><button class="btn btn--ghost" data-action="cancel-delete">Cancelar</button>
+          <button class="btn btn--danger" data-action="confirm-delete">Eliminar</button></div>
+      </div></div>`;
+      return;
+    }
+    host.innerHTML='';
+  }
+  async function confirmDelete(){
+    const id=state.pendingDelete;if(!id)return;
+    try{
+      await dbDelete(id);state.pendingDelete=null;
+      if(state.detailId===id)state.detailId=null;
+      await loadSpecimens();toast('Registro eliminado');renderAll();
+    }catch(err){toast('No se pudo eliminar el registro');}
+  }
+
+  /* ============================ Exportación ============================ */
+  function download(blob,filename){
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+    a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+  }
+  function exportJson(){
+    const items=filtered();
+    const payload={metadata:{application:'Inventario Flora · Vivero Municipal',exportedAt:new Date().toISOString(),count:items.length,schemaVersion:1},specimens:items};
+    download(new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}),`inventario-flora-${fileStamp()}.json`);
+    toast(`Exportados ${items.length} registros a JSON`);
+  }
+  function exportCsv(){
+    const items=filtered();
+    const head=['ID','Nombre común','Nombre científico','Familia','Tipo de vegetación','Origen','Fotografía (archivo)','Ubicación','Latitud','Longitud','Altura (m)','Estado físico','Descripción','Observaciones','Fecha de registro'];
+    const cell=(v)=>`"${String(v??'').replace(/"/g,'""')}"`;
+    const rows=items.map(s=>[s.id,s.commonName,s.scientificName,s.family,s.vegetationType,s.origin,s.photo?s.photo.name:'',s.location,
+      Number(s.latitude).toFixed(6),Number(s.longitude).toFixed(6),s.heightMeters,s.healthStatus,htmlToText(s.description),s.observations,formatDateTime(s.registeredAt)].map(cell).join(';'));
+    download(new Blob(['\uFEFF'+head.map(cell).join(';')+'\r\n'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'}),`inventario-flora-${fileStamp()}.csv`);
+    toast(`Exportados ${items.length} registros a CSV`);
+  }
+
+  /* ============================ Eventos y arranque ============================ */
+  let toastTimer=null;
+  function toast(message){
+    $('toast-root').innerHTML=`<div class="toast" role="status"><span>${esc(message)}</span><button data-action="close-toast" aria-label="Cerrar">✕</button></div>`;
+    clearTimeout(toastTimer);toastTimer=setTimeout(()=>{$('toast-root').innerHTML='';},4200);
+  }
+  function renderAll(){
+    document.body.dataset.fieldMode=state.fieldMode?'true':'false';
+    renderHeader();renderMain();renderOverlays();
+  }
+  document.addEventListener('click',(event)=>{
+    const btn=event.target.closest('[data-action]');if(!btn)return;
+    const action=btn.dataset.action,id=btn.dataset.id;
+    switch(action){
+      case 'toggle-field': state.fieldMode=!state.fieldMode;renderAll();break;
+      case 'new': state.view='form';state.editingId=null;state.photo=null;renderAll();break;
+      case 'back': state.view='list';state.editingId=null;state.detailId=null;renderAll();break;
+      case 'view': state.detailId=id;renderOverlays();break;
+      case 'close-detail': if(event.target===btn||btn.closest('.modal__header,.modal__actions')){state.detailId=null;renderOverlays();}break;
+      case 'edit': state.detailId=null;state.view='form';state.editingId=id;renderAll();break;
+      case 'delete': state.pendingDelete=id;renderOverlays();break;
+      case 'cancel-delete': state.pendingDelete=null;renderOverlays();break;
+      case 'confirm-delete': void confirmDelete();break;
+      case 'clear-filters': state.filters={family:'',vegetationType:'',healthStatus:'',query:''};renderAll();break;
+      case 'locate': locate();break;
+      case 'pick-camera': $('photo-camera').click();break;
+      case 'pick-gallery': $('photo-gallery').click();break;
+      case 'remove-photo': state.photo=null;renderPhotoPreview();break;
+      case 'format':
+        event.preventDefault();
+        $('description').focus();document.execCommand(btn.dataset.cmd);
+        break;
+      case 'export-json': exportJson();break;
+      case 'export-csv': exportCsv();break;
+      case 'close-toast': $('toast-root').innerHTML='';break;
+    }
+  });
+  document.addEventListener('keydown',(event)=>{
+    if(event.key!=='Escape')return;
+    if(state.pendingDelete){state.pendingDelete=null;renderOverlays();}
+    else if(state.detailId){state.detailId=null;renderOverlays();}
+  });
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+  }
+  (async function init(){
+    try{
+      db=await openDB();await loadSpecimens();renderAll();
+    }catch(err){
+      $('main').innerHTML=`<div class="empty-state"><h2>No se pudo abrir el almacenamiento local</h2><p>${esc(err.message||'Error desconocido')}</p></div>`;
+    }
+  })();
+  </script>
+</body>
+</html>
